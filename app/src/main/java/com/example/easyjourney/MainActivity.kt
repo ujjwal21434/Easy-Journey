@@ -22,6 +22,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,10 +61,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MyScreenContent() {
-    var highlightedIndex by remember { mutableStateOf(0) }
+    var highlightedIndex by remember { mutableIntStateOf(0) }
     var isDistanceInKm by remember { mutableStateOf(true) }
-    var totalDistanceCovered by remember { mutableStateOf(0.0) }
-
+    var totalDistanceCovered by remember { mutableDoubleStateOf(0.0) }
+    var vadodaraReached by remember { mutableStateOf(false) }
 
 
 
@@ -88,6 +90,8 @@ fun MyScreenContent() {
         Place("Surat", 1800),
         Place("Vadodara", 1900)
     )
+
+
 
     val totalStops = differentStops.size
 
@@ -118,13 +122,16 @@ fun MyScreenContent() {
             }
         }
 
+
+
+
         Spacer(modifier = Modifier.height(35.dp))
 
         Box{
             Column (modifier = Modifier.padding(15.dp)){
                 Text(text = "Current station = ${differentStops[highlightedIndex].name}")
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(text = "Distance between the current station and previous station = ${differentStops[highlightedIndex].distance} ${if (isDistanceInKm) "km" else "miles"}")
+                Text(text = "Distance between the current station and previous station = ${if (isDistanceInKm) differentStops[highlightedIndex].distance else differentStops[highlightedIndex].distance.toDouble()/1.609} ${if (isDistanceInKm) "km" else "miles"}")
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(text = "Distance covered till now= ${if (isDistanceInKm) totalDistanceCovered else totalDistanceCovered.toDouble()/1.609} ${if (isDistanceInKm) "km" else "miles"}",)
                 Spacer(modifier = Modifier.height(10.dp))
@@ -153,13 +160,124 @@ fun MyScreenContent() {
             Button(
                 onClick = { highlightedIndex = (highlightedIndex + 1) % differentStops.size
                     totalDistanceCovered += differentStops[highlightedIndex].distance.toDouble()
-                }
+                    if (highlightedIndex == differentStops.indexOfFirst { it.name == "Vadodara" }) {
+                        vadodaraReached = true}
+                },
+                enabled = !vadodaraReached
             ) {
                 Text(text = "Move to next stop")
             }
         }
     }
 }
+
+
+
+
+
+@Composable
+fun MyScreenContentSecond() {
+    var highlightedIndex by remember { mutableIntStateOf(0) }
+    var isDistanceInKm by remember { mutableStateOf(true) }
+    var totalDistanceCovered by remember { mutableDoubleStateOf(0.0) }
+    var vadodaraReached by remember { mutableStateOf(false) }
+
+
+
+    val differentStops = listOf(
+        Place("Delhi", 0),
+        Place("Noida", 100),
+        Place("Mathura", 200),
+        Place("Udaipur", 1600),
+        Place("Ahmedabad", 1700),
+        Place("Surat", 1800),
+        Place("Vadodara", 1900)
+    )
+
+
+
+
+    val totalStops = differentStops.size
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        LinearProgressIndicator(
+            progress = (highlightedIndex + 1) / totalStops.toFloat(),
+            color = Color.Red,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(text = "Stations", modifier = Modifier.padding(16.dp), style = TextStyle(fontStyle = FontStyle.Italic))
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = "Distance of highlighted station from previous station", modifier = Modifier.padding(10.dp), style = TextStyle(fontStyle = FontStyle.Italic))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            differentStops.forEachIndexed { index, item ->
+                val distance = if (isDistanceInKm) item.distance else item.distance.toDouble()/1.609
+                ItemRow(
+                    item = item.copy(distance = distance),
+                    highlighted = index == highlightedIndex,
+                    isDistanceInKm
+                )
+            }
+        }
+
+
+
+
+        Spacer(modifier = Modifier.height(35.dp))
+
+        Box{
+            Column (modifier = Modifier.padding(15.dp)){
+                Text(text = "Current station = ${differentStops[highlightedIndex].name}")
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(text = "Distance between the current station and previous station = ${if (isDistanceInKm) differentStops[highlightedIndex].distance else differentStops[highlightedIndex].distance.toDouble()/1.609} ${if (isDistanceInKm) "km" else "miles"}")
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(text = "Distance covered till now= ${if (isDistanceInKm) totalDistanceCovered else totalDistanceCovered.toDouble()/1.609} ${if (isDistanceInKm) "km" else "miles"}",)
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(text = "Total Distance left to reach Vadodara= ${if (isDistanceInKm) (7300-totalDistanceCovered.toDouble()) else (7300-totalDistanceCovered.toDouble())/1.609} ${if (isDistanceInKm) "km" else "miles"}"
+                )
+            }
+
+        }
+
+        Spacer(modifier = Modifier.height(50.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Button(
+                onClick = {
+                    isDistanceInKm = !isDistanceInKm
+                },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text(text = "Change Unit (Km / Mile)")
+            }
+            Button(
+                onClick = { highlightedIndex = (highlightedIndex + 1) % differentStops.size
+                    totalDistanceCovered += differentStops[highlightedIndex].distance.toDouble()
+                    if (highlightedIndex == differentStops.indexOfFirst { it.name == "Vadodara" }) {
+                        vadodaraReached = true}
+                },
+                enabled = !vadodaraReached
+            ) {
+                Text(text = "Move to next stop")
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun ItemRow(item: Place, highlighted: Boolean, isDistanceInKm: Boolean) {
@@ -190,7 +308,7 @@ fun ItemRow(item: Place, highlighted: Boolean, isDistanceInKm: Boolean) {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun GreetingPreviewSecond() {
     EasyJourneyTheme {
         MyScreenContent()
     }
